@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html>
+  
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="utf-8">
+  <meta name="author" content="Emoker">
+  
+  
+  <title>ngrok 服务的搭建过程 | Emoker</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+    <meta name="keywords" content="示例,笔记,ngrok,服务,">
+  
+
+  
+  <meta name="description" content="前段时间为了做微信的相关功能， 需要在开发机器上直接调试， 所以搞了个内网穿透， 今天把搭建过程记录一下。 ">
+
+  
+
+  
+    <script src="//cdn.jsdelivr.net/npm/leancloud-storage@3.11.1/dist/av-min.js" async></script>
+  
+
+  
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML" async></script>
+  
+
+  
+    <script src="//unpkg.com/valine/dist/Valine.min.js" async></script>
+  
+
+  
+
+  <script>
+  // theme-ad's config script
+  // it can be used in every script
+  
+  window.AD_CONFIG = {
+    leancloud: {"appid":"OkcRvs457liULCRbwV4HXXPB-gzGzoHsz","appkey":"PPVxnfdGCBBWx5L5uDwwWt7E","comment":true,"count":true,"timer":true},
+    welcome: {"enable":false,"interval":30},
+    start_time: "2019-05-15",
+    passwords: ["efe07af7441da2b69c4a41e42e73be4db47f66010a56900788a458354a7373ec", ],
+    is_post: true,
+    lock: false,
+    author: "Emoker",
+    share: {"twitter":true,"facebook":true,"weibo":true,"qq":true,"wechat":true},
+    mathjax: true,
+    page_type: "",
+    root: "/"
+  };
+</script>
+
+  <script src="/vendor/sha256.min.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/index.js"></script>
+<script src="/vendor/qrcode.min.js"></script>
+
+  
+    <link rel="icon" href="/images/favicon.ico">
+    <link rel="apple-touch-icon" href="/images/touch-icon.png">
+  
+
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+  <link rel="stylesheet" href="/css/index.css">
+<link rel="stylesheet" href="/styles/components/highlight/highlight.css">
+
+  
+</head>
+  <body>
+    <header class="site-header">
+  <div class="site-header-brand">
+    
+      <span class="site-header-brand-title">
+        <a href="/">Emoker</a>
+      </span>
+    
+    
+      <span class="site-header-brand-motto"> | 别拖至春天</span>
+    
+  </div>
+  <div class="site-header-right">
+    <nav class="site-header-navigation">
+      
+        <a href="/" target="_self">首页</a>
+      
+        <a href="/archives/" target="_self">归档</a>
+      
+        <a href="/tags/" target="_self">标签</a>
+      
+        <a href="/categories/" target="_self">分类</a>
+      
+        <a href="/friends/" target="_self">友链</a>
+      
+        <a href="/about/" target="_self">关于</a>
+      
+    </nav>
+    <div class="site-header-btn">
+      
+        <a href="https://github.com/emoker/" target="_blank" id="site-github">
+          <i class="fa fa-github-alt"></i>
+        </a>
+      
+      <a href="javascript:void(0);" id="site-search">
+        <i class="fa fa-search"></i>
+      </a>
+      <a href="javascript:void(0);" id="site-nav-btn">
+        <i class="fa fa-ellipsis-v"></i>
+      </a>
+    </div>
+  </div>
+</header>
+<nav class="table-content" id="site-nav">
+  <div class="table-content-title">
+    <span>导航</span>
+  </div>
+  <div class="table-content-main">
+    <ol class="toc">
+      
+        <li class="toc-item">
+          <a href="/" target="_self">
+            首页
+          </a>
+        </li>
+      
+        <li class="toc-item">
+          <a href="/archives/" target="_self">
+            归档
+          </a>
+        </li>
+      
+        <li class="toc-item">
+          <a href="/tags/" target="_self">
+            标签
+          </a>
+        </li>
+      
+        <li class="toc-item">
+          <a href="/categories/" target="_self">
+            分类
+          </a>
+        </li>
+      
+        <li class="toc-item">
+          <a href="/friends/" target="_self">
+            友链
+          </a>
+        </li>
+      
+        <li class="toc-item">
+          <a href="/about/" target="_self">
+            关于
+          </a>
+        </li>
+      
+    </ol>
+  </div>
+</nav>
+<div id="site-process"></div>
+    <main>
+      
+  <div class="passage">
+  <div class="passage-meta">
+    <span>
+      <i class="fa fa-calendar"></i>2019-05-24
+    </span>
+    
+    
+      <span>
+        | <i class="fa fa-unlock-alt"></i>UNLOCK
+      </span>
+    
+  </div>
+  <h1 class="passage-title">
+    ngrok 服务的搭建过程
+  </h1>
+  
+  <article class="passage-article">
+    <h4 id="大纲"><a href="#大纲" class="headerlink" title="大纲"></a>大纲</h4><ul>
+<li>一、 如何用一分钟实现ngrok内网穿透</li>
+<li>二、 ngrok的作用</li>
+<li>三、 材料</li>
+<li>四、 搭建过程<ul>
+<li>事前准备</li>
+<li>下载ngrok源码</li>
+<li>ssl证书</li>
+<li>安装编译环境</li>
+<li>编译</li>
+<li>运行</li>
+</ul>
+</li>
+<li>五、 注意事项</li>
+</ul>
+<h4 id="一、-如何用一分钟实现ngrok内网穿透"><a href="#一、-如何用一分钟实现ngrok内网穿透" class="headerlink" title="一、 如何用一分钟实现ngrok内网穿透"></a>一、 如何用一分钟实现ngrok内网穿透</h4><p>安装ngrok， 开启服务， 完成。 本次分享到此结束。 </p>
+<h4 id="二、-ngrok的作用"><a href="#二、-ngrok的作用" class="headerlink" title="二、 ngrok的作用"></a>二、 ngrok的作用</h4><p>网络十分发达， 但是大部分网络以局域网的形式存在， 无法直接访问。 所以需要内网穿透</p>
+<h4 id="三、-需要用到的材料"><a href="#三、-需要用到的材料" class="headerlink" title="三、 需要用到的材料"></a>三、 需要用到的材料</h4><ul>
+<li>一台具有公网ip的服务器</li>
+<li>一个域名， 有备案最好（示例域名： tunnel.emok.top）</li>
+<li>一堆依赖的工具， 包括但不限于： <ul>
+<li>git</li>
+<li>gcc</li>
+<li>wget</li>
+</ul>
+</li>
+</ul>
+<h4 id="四、-搭建过程"><a href="#四、-搭建过程" class="headerlink" title="四、 搭建过程"></a>四、 搭建过程</h4><p>目前搭建的方案大都是 ： </p>
+<ol>
+<li>事前准备》2. 安装编译环境 》 3. 下载源码 》 4. 获取证书 》 5. 编译 》 6. 运行。 </li>
+</ol>
+<p>其中2-4步是可以并行进行， 不需要按顺序的。 流程图如下： </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">graph TB</span><br><span class="line">A[-事前准备 - ]</span><br><span class="line">B1[-ngrok源码 - ]</span><br><span class="line">B2[-ssl证书 - ]</span><br><span class="line">B3[-编译环境 - ]</span><br><span class="line">C[-编译ngrok - ]</span><br><span class="line">D[-运行服务端 - ]</span><br><span class="line">A-- &gt; B1</span><br><span class="line">A-- &gt; B2</span><br><span class="line">A-- &gt; B3</span><br><span class="line">B1-- &gt; C</span><br><span class="line">B2-- &gt; C</span><br><span class="line">B3-- &gt; C</span><br><span class="line">C-- &gt; D</span><br></pre></td></tr></table></figure>
+
+<h5 id="事前准备"><a href="#事前准备" class="headerlink" title="事前准备"></a>事前准备</h5><p>事前准备分为两个步骤， 一个是域名解析， 一个是依赖安装。<br>域名解析需要到域名服务商那里设置用于ngrok的域名的服务器地址解析， 以及该域名子域名的解析。<br>依赖安装是指搭建过程中需要用到的一些底层工具， 包括Git、 gcc、 wget等。 </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">#</span><br><span class="line">CentOS 7</span><br><span class="line">yum -y install zlib-devel openssl-devel perl hg cpio expat-devel gettext-devel curl curl-devel perl-ExtUtils-MakeMaker hg wget gcc gcc-c++</span><br></pre></td></tr></table></figure>
+
+<h5 id="下载ngrok源码"><a href="#下载ngrok源码" class="headerlink" title="下载ngrok源码"></a>下载ngrok源码</h5><p>下载ngrok的源码是通过Git工具到Github上下载的， 一般Linux默认有Git工具， 如果没有， 可以自己安装（安装方式不限于apt、 yum、 下载安装）。 </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">#</span><br><span class="line">CentOS</span><br><span class="line">yum –y install git</span><br></pre></td></tr></table></figure>
+
+<p>或者可以下载Git安装包进行安装， 参考 <a href="http://note.youdao.com/noteshare?id=52b0b40cd61272f497386c9854597906" target="_blank" rel="noopener">这篇文章</a></p>
+<p>安装完使用克隆命令将ngrok代码克隆到某个路径</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">#</span><br><span class="line">git clone[git url]</span><br><span class="line">git clone https: //github.com/inconshreveable/ngrok.git</span><br></pre></td></tr></table></figure>
+
+<p>安装结果如图：<br><img src="https://note.youdao.com/favicon.ico" alt="image">  </p>
+<h5 id="获取SSL证书"><a href="#获取SSL证书" class="headerlink" title="获取SSL证书"></a>获取SSL证书</h5><p>运行ngrok服务需要ssl证书的支持， 一般用于商业服务的ssl证书都是花钱购买别的机构颁发的证书， 这里我们选择自己生成一个证书， 缺点是只能用于自己的服务， 但是对我们来说足够了。 </p>
+<p>首先需要安装生成证书所需的工具 open-ssl</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">#</span><br><span class="line">CentOS</span><br><span class="line">yum install open-ssl</span><br></pre></td></tr></table></figure>
+
+
+
+<p>然后为了便于管理， 我们可以新建一个目录来存放ssl证书。 </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mkdir cert</span><br><span class="line">cd cert</span><br></pre></td></tr></table></figure>
+
+<p>然后生成ssl证书 </p>
+<blockquote>
+<p>生成SSL证书时使用的域名要和准备搭载ngrok服务的域名一致。 </p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">#</span><br><span class="line">ssl# 指令中的$NGROK_DOMAIN替换成准备的域名</span><br><span class="line">openssl genrsa - out rootCA.key 2048</span><br><span class="line">openssl req - x509 - new - nodes - key rootCA.key - subj &quot;/CN=$NGROK_DOMAIN&quot; - days 5000 - out rootCA.pem</span><br><span class="line">openssl genrsa - out server.key 2048</span><br><span class="line">openssl req - new - key server.key - subj &quot;/CN=$NGROK_DOMAIN&quot; - out server.csr</span><br><span class="line">openssl x509 - req - in server.csr - CA rootCA.pem - CAkey rootCA.key - CAcreateserial - out server.crt - days 5000</span><br></pre></td></tr></table></figure>
+
+<p>生成过程中遇到 yes or no 可以直接yes， 遇到需要输入的地方也可以直接回车继续。<br>生成完成后会有如图的 6 个文件：<br><img src="https://note.youdao.com/favicon.ico" alt="image">  </p>
+<p>然后我们将其中的 rootCA.pem 、 server.crt 、 server.key  三个文件复制到 ngrok 的 assets 目录下， 覆盖原来的默认证书。 </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">cp rootCA.pem ngrok / assets / client / tls / ngrokroot.crt</span><br><span class="line">cp server.crt ngrok / assets / server / tls / snakeoil.crt</span><br><span class="line">cp server.key ngrok / assets / server / tls / snakeoil.key</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>如果还没下载源码就先下载源码后在执行覆盖</p>
+</blockquote>
+<h5 id="安装编译环境"><a href="#安装编译环境" class="headerlink" title="安装编译环境"></a>安装编译环境</h5><blockquote>
+<p>假设已经安装好依赖环境。 </p>
+</blockquote>
+<p>编译的依赖环境为Golang。<br>go的安装可以通过下载源码， 然后编译安装， 也可以直接下载go安装， 后者相对简单一点。<br>我们为了简单， 直接下载go的压缩包， 下载下来解压就可以用。<br>去官网(<a href="https://note.youdao.com/" target="_blank" rel="noopener">https://golang.org/dl/</a>)下载go1.4的安装包， 以及最新版本的压缩包， 要选择kind为Archive的。 后面会解释为什么要下载两个版本。<br>下载后放在服务器上顺眼的地方， 然后运行安装， 基本都默认就可以。<br><img src="https://github.com/emoker/graph-bed/raw/master/notes/58beab878313a01d6b832db1ab2613b2/wx_20190325162423.png" alt="image"></p>
+<blockquote>
+<p>需要说明的是， go1.4 之后的版本是需要基于go1.4 进行自编译， 所以需要安装两次go环境， 一次是安装go1.4， 第二次是安装更新的版本（一般是最新的稳定版）。 </p>
+</blockquote>
+<p>至于为什么要安装最新的go稳定版是因为go1.4会在编译ngrok的过程中出错。 </p>
+<p>安装完go后需要配置go的环境配置， 后续的编译要用到。 </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">export GOPATH = /usr/local / ngrok /</span><br><span class="line">    export GOROOT = /usr/local / go /</span><br><span class="line">    export GOROOT_BOOTSTRAP = /usr/local / go / #添加 path</span><br><span class="line">export PATH = $PATH: /usr/local / go / bin</span><br></pre></td></tr></table></figure>
+
+<h5 id="编译"><a href="#编译" class="headerlink" title="编译"></a>编译</h5><p>通过go语言的指令进行编译， 需要编译一个服务端和需要的客户端。 编译过程本身没有难度， 只要go环境没问题， 一般都不会报错。 </p>
+<blockquote>
+<p>需要注意一点， 编译客户端的参数要和需要运行的目标系统及其位数匹配</p>
+</blockquote>
+<p>编译服务端<br>Linux 64位： </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">#</span><br><span class="line">Linux 64</span><br><span class="line">cd / usr / local / go / src</span><br><span class="line">GOOS = linux GOARCH = amd64</span><br><span class="line">    . / make.bash</span><br><span class="line">cd / usr / local / ngrok /</span><br><span class="line">    GOOS = linux GOARCH = amd64</span><br><span class="line">make release - server</span><br></pre></td></tr></table></figure>
+
+
+<p>编译客户端<br>Windows 64的版本： </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">#</span><br><span class="line">Windows 64</span><br><span class="line">cd / usr / local / go / src</span><br><span class="line">GOOS = windows GOARCH = amd64</span><br><span class="line">    . / make.bash</span><br><span class="line">cd / usr / local / ngrok /</span><br><span class="line">    GOOS = windows GOARCH = amd64</span><br><span class="line">make release - client</span><br></pre></td></tr></table></figure>
+
+<p>Mac 64： </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">#</span><br><span class="line">Mac 64</span><br><span class="line">cd / usr / local / go / src</span><br><span class="line">GOOS = darwin GOARCH = amd64</span><br><span class="line">    . / make.bash</span><br><span class="line">cd / usr / local / ngrok /</span><br><span class="line">    GOOS = darwin GOARCH = amd64</span><br><span class="line">make release - client</span><br></pre></td></tr></table></figure>
+
+<h5 id="运行"><a href="#运行" class="headerlink" title="运行"></a>运行</h5><p>运行服务端</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">#</span><br><span class="line">ngrok# 指令中的$NGROK_DOMAIN替换成准备的域名</span><br><span class="line">    /</span><br><span class="line">    usr / local / ngrok / bin / ngrokd - domain = &quot;$NGROK_DOMAIN&quot; - httpAddr = &quot;:80&quot;</span><br></pre></td></tr></table></figure>
+
+<p>客户端配置文件格式<br>新建配置文件ngrok.cfg， 内容如下： </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">#</span><br><span class="line">ngrok client option: ngrok.cfg</span><br><span class="line">server_addr: &quot;tunnel.hanyz.cn:4443&quot;</span><br><span class="line">trust_host_root_certs: false</span><br></pre></td></tr></table></figure>
+
+<p>客户端运行指令</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">#</span><br><span class="line">ngrok</span><br><span class="line">    . / ngrok - config = . / ngrok.cfg - subdomain abc 80</span><br></pre></td></tr></table></figure>
+
+<h4 id="五、-注意事项-amp-解答"><a href="#五、-注意事项-amp-解答" class="headerlink" title="五、 注意事项 &amp; 解答"></a>五、 注意事项 &amp; 解答</h4><ol>
+<li>编译安装golang的时候遇到以下报错： </li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ngrok package net / http / httptrace: unrecognized</span><br><span class="line">import path &quot;net/http/httptrace&quot;</span><br></pre></td></tr></table></figure>
+
+
+
+<blockquote>
+<p>解决： 安装go最新稳定版</p>
+</blockquote>
+<ol start="2">
+<li>安装最新版golang时遇到以下报错： </li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$GOPATH must not be set to $GOROOT</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>解决： 设置GOROOT</p>
+</blockquote>
+<ol start="3">
+<li>安装最新版golang时遇到以下报错： </li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Set $GOROOT_BOOTSTRAP to a working Go tree &gt;= Go 1.4.</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>解决： 先安装1 .4 再安装最新版</p>
+</blockquote>
+<ol start="4">
+<li>启动客户端后访问页面提示 ： tunnel not found</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">// 如果是以下面的命令启动的，建议将 -httpsAddr 参数块与 -httpAddr 参数调换位置</span><br><span class="line">//由</span><br><span class="line">~/ngrok/bin / ngrokd - domain = &quot;$NGROK_DOMAIN&quot; - httpAddr = &quot;:80&quot; - httpsAddr = &quot;:443&quot;</span><br><span class="line">    //改为：</span><br><span class="line">    ~/ngrok/bin / ngrokd - domain = &quot;$NGROK_DOMAIN&quot; - httpsAddr = &quot;:443&quot; - httpAddr = &quot;:80&quot;</span><br><span class="line">// 经试验有效，但是原因未知</span><br></pre></td></tr></table></figure>
+
+
+<p>参考：<br><a href="https://link.jianshu.com/?t=http://sunnyos.com/article-show-48.html" target="_blank" rel="noopener">sunny博客</a><br><a href="https://www.jianshu.com/p/406b041a7635" target="_blank" rel="noopener">自己服务器搭建NGROK</a></p>
+  </article>
+  <aside class="table-content" id="site-toc">
+  <div class="table-content-title">
+    <i class="fa fa-arrow-right fa-lg" id="site-toc-hide-btn"></i>
+    <span>目录</span>
+  </div>
+  <div class="table-content-main">
+    <ol class="toc"><li class="toc-item toc-level-4"><a class="toc-link" href="#大纲"><span class="toc-text">大纲</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#一、-如何用一分钟实现ngrok内网穿透"><span class="toc-text">一、 如何用一分钟实现ngrok内网穿透</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#二、-ngrok的作用"><span class="toc-text">二、 ngrok的作用</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#三、-需要用到的材料"><span class="toc-text">三、 需要用到的材料</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#四、-搭建过程"><span class="toc-text">四、 搭建过程</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#事前准备"><span class="toc-text">事前准备</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#下载ngrok源码"><span class="toc-text">下载ngrok源码</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#获取SSL证书"><span class="toc-text">获取SSL证书</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#安装编译环境"><span class="toc-text">安装编译环境</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#编译"><span class="toc-text">编译</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#运行"><span class="toc-text">运行</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#五、-注意事项-amp-解答"><span class="toc-text">五、 注意事项 &amp; 解答</span></a></li></ol>
+  </div>
+</aside>
+  
+    <aside class="passage-copyright">
+      <div>本文作者: Emoker</div>
+      
+        <div>
+          原文链接: 
+          <a href target="_blank">https://emoker.github.io/2019/05/24/build-ngrok-service.html</a>
+        </div>
+      
+      <div>
+        版权声明: 本博客所有文章除特别声明外, 均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> 许可协议. 转载请注明出处!
+      </div>
+    </aside>
+  
+  
+    <div class="passage-tags">
+     
+      <a href="/tags/示例/"><i class="fa fa-tags"></i>示例</a>
+     
+      <a href="/tags/笔记/"><i class="fa fa-tags"></i>笔记</a>
+     
+      <a href="/tags/ngrok/"><i class="fa fa-tags"></i>ngrok</a>
+     
+      <a href="/tags/服务/"><i class="fa fa-tags"></i>服务</a>
+    
+    </div>
+  
+</div>
+
+    </main>
+    
+      
+<div class="site-comment-contanier" data-plateform="leancloud">
+  
+    <p id="site-comment-info">
+      <i class="fa fa-spinner fa-spin"></i> 评论加载中
+    </p>
+    <div id="site-comment"></div>
+  
+</div>
+    
+    <div class="site-footer-wrapper">
+  <footer class="site-footer">
+    
+      
+        <div class="site-footer-col">
+          <h5 class="site-footer-title">博客推荐</h5>
+          
+            <span class="site-footer-item">
+              <a href="https://godbmw.com/" target="_blank">GodBMW</a>
+            </span>
+          
+            <span class="site-footer-item">
+              <a href="http://ruanyifeng.com/" target="_blank">阮一峰的个人网站</a>
+            </span>
+          
+        </div>
+      
+        <div class="site-footer-col">
+          <h5 class="site-footer-title">系列教程</h5>
+          
+            <span class="site-footer-item">
+              <a href="https://godbmw.com/categories/webpack4%E7%B3%BB%E5%88%97%E6%95%99%E7%A8%8B/" target="_blank">webpack4系列教程</a>
+            </span>
+          
+            <span class="site-footer-item">
+              <a href="https://godbmw.com/design-patterns/" target="_blank">设计模式手册</a>
+            </span>
+          
+        </div>
+      
+        <div class="site-footer-col">
+          <h5 class="site-footer-title">抓到我</h5>
+          
+            <span class="site-footer-item">
+              <a href="https://juejin.im/user/5b91fcf06fb9a05d3c7fd4a5" target="_blank">掘金</a>
+            </span>
+          
+            <span class="site-footer-item">
+              <a href="https://segmentfault.com/" target="_blank">思否</a>
+            </span>
+          
+        </div>
+      
+    
+    <div class="site-footer-info">
+      <i class="fa fa-clock-o"></i> 本站已稳定运行<span id="site-time"></span>
+    </div>
+    
+      <div class="site-footer-info">
+        <i class="fa fa-paw"></i> 您是本站第 <span id="site-count"></span> 位访客
+		
+			| <a href="http://www.miit.gov.cn/" target="_blank">粤ICP备18054251号-1</a>
+		
+      </div>
+    
+    
+      <div class="site-footer-info">
+        <i class="fa fa-at"></i> Email: emoker@qq.com
+      </div>
+    
+    <div class="site-footer-info">
+      <i class="fa fa-copyright"></i> 
+      2019 <a href="https://github.com/dongyuanxin/theme-ad/" target="_blank">Theme-AD</a>.
+      Created by <a href="https://godbmw.com/" target="_blank">GodBMW</a>.
+      All rights reserved.
+    </div>
+  </footer>
+</div>
+    <div id="site-layer" style="display:none;">
+  <div class="site-layer-content">
+    <div class="site-layer-header">
+      <span class="site-layer-header-title" id="site-layer-title"></span>
+      <i class="fa fa-close" id="site-layer-close"></i>
+    </div>
+    <div class="site-layer-body" id="site-layer-container">
+      <div class="site-layer-input" id="site-layer-search" style="display: none;">
+        <input type="text">
+        <i class="fa fa-search"></i>
+      </div>
+      
+      <div class="site-layer-reward" id="site-layer-reward" style="display: none;">
+        
+        <div>
+          <img src="/images/wechat.png" alt="WeChat">
+          
+          <p>WeChat</p>
+          
+        </div>
+        
+        <div>
+          <img src="/images/alipay.png" alt="AliPay">
+          
+          <p>AliPay</p>
+          
+        </div>
+        
+      </div>
+      
+      <div id="site-layer-welcome" style="display:none;"></div>
+    </div>
+  </div>
+</div>
+    
+
+<div class="bottom-bar">
+  <div class="bottom-bar-left">
+    <a href="/2019/05/24/git-cli-init.html" data-enable="true">
+      <i class="fa fa-arrow-left"></i>
+    </a>
+    <a href="/2019/05/15/hello-world.html" data-enable="true">
+      <i class="fa fa-arrow-right"></i>
+    </a>
+  </div>
+  <div class="bottom-bar-right">
+    <a href="javascript:void(0);" data-enable="true" id="site-toc-show-btn">
+      <i class="fa fa-bars"></i>
+    </a>
+    
+    <a href="#site-comment" data-enable="true">
+      <i class="fa fa-commenting"></i>
+    </a>
+    
+    <a href="javascript:void(0);" id="site-toggle-share-btn">
+      <i class="fa fa-share-alt"></i>
+    </a>
+    
+    <a href="javascript:void(0);" id="site-reward">
+      <i class="fa fa-heart"></i>
+    </a>
+    
+    <a href="javascript:void(0);" id="back-top-btn">
+      <i class="fa fa-chevron-up"></i>
+    </a>
+  </div>
+</div>
+    <div id="share-btn">
+  
+    <a id="share-btn-twitter" href="javascript:void(0);" target="_blank">
+      <i class="fa fa-twitter"></i>
+    </a>
+  
+  
+    <a id="share-btn-facebook" href="javascript:void(0);" target="_blank">
+      <i class="fa fa-facebook"></i>
+    </a>
+  
+  
+    <a id="share-btn-weibo" href="javascript:void(0);" target="_blank">
+      <i class="fa fa-weibo"></i>
+    </a>
+  
+  
+    <a id="share-btn-qq" href="javascript:void(0);" target="_blank">
+      <i class="fa fa-qq"></i>
+    </a>
+  
+  
+    <a id="share-btn-wechat" href="javascript:void(0);" target="_blank">
+      <i class="fa fa-wechat"></i>
+    </a>
+  
+</div>
+    
+
+
+
+
+
+    
+  </body>
+</html>
