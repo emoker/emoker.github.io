@@ -17,9 +17,9 @@
     <url>%2F2019%2F05%2F25%2Fjs-closures-quick-understanding.html</url>
     <content type="text"><![CDATA[什么是闭包 来自百度： 闭包就是能够读取其他函数内部变量的函数。 例如在javascript中， 只有函数内部的子函数才能读取局部变量， 所以闭包可以理解成“定义在一个函数内部的函数“。 在本质上， 闭包是将函数内部和函数外部连接起来的桥梁。 个人理解： 闭包可以理解成js版本的封装 为了避免参数污染， 通过在函数内部定义变量， 并通过子函数进行操作， 并讲子函数暴露给外部环境进行引用， 这种程序结构就叫做闭包。 什么是闭包 来自百度： 闭包就是能够读取其他函数内部变量的函数。 例如在javascript中， 只有函数内部的子函数才能读取局部变量， 所以闭包可以理解成“定义在一个函数内部的函数“。 在本质上， 闭包是将函数内部和函数外部连接起来的桥梁。 个人理解： 闭包可以理解成js版本的封装 为了避免参数污染， 通过在函数内部定义变量， 并通过子函数进行操作， 并讲子函数暴露给外部环境进行引用， 这种程序结构就叫做闭包。 举例：当function里嵌套function时， 内部的function可以访问外部function里的变量。 不管执行多少次， 都会alert 16。 123456789function foo(x) &#123; var tmp = 3; function bar(y) &#123; alert(x + y + (++tmp)); &#125; bar(10);&#125;foo(2) 上面的代码运行后的结果并不是闭包， 只是展示内部的function使用对外部function里的变量的过程。 如果你把上面代码中的内部函数bar() 单独返回出去， 并运行他的时候， 内部函数bar() 依然可以访问外部函数foo() 的变量， 这个时候就是闭包。 内部function会close-over外部function的变量直到内部function结束。 12345678function foo(x) &#123; var tmp = 3; return function(y) &#123; alert(x + y + (++tmp)); &#125;&#125;var bar = foo(2); // bar 现在是一个闭包bar(10); 但是， 由于tmp仍存在于bar闭包的内部， 所以它还是会自加1， 而且你每次调用bar时它都会自加1.]]></content>
       <tags>
+        <tag>笔记</tag>
         <tag>JavaScript</tag>
         <tag>js</tag>
-        <tag>笔记</tag>
       </tags>
   </entry>
   <entry>
@@ -27,10 +27,10 @@
     <url>%2F2019%2F05%2F24%2Fgit-cli-init.html</url>
     <content type="text"><![CDATA[最近更换了工作的电脑， 然后需要重新配置Git环境， 找来找去挺麻烦的， 所以做个笔记。 用户设置12git config--global user.name &quot;John Doe&quot;git config--global user.email &quot;johndoe@example.com&quot; SSH公钥设置命令： 生成公钥 123456789101112$ ssh - keygenGenerating public / private rsa key pair.Enter file in which to save the key(/home/schacon / .ssh / id_rsa): Created directory &apos;/home/schacon/.ssh&apos;.Enter passphrase(empty for no passphrase): Enter same passphrase again: Your identification has been saved in /home/schacon / .ssh / id_rsa.Your public key has been saved in /home/schacon / .ssh / id_rsa.pub.The key fingerprint is: d0: 82: 24: 8 e: d7: f1: bb: 9 b: 33: 53: 96: 93: 49: da: 9 b: e3 schacon @mylaptop.local 命令： 查看已有的公钥 12345// 确认是否有公钥$ cd~/.ssh$ lsauthorized_keys2 id_dsa known_hostsconfig id_dsa.pub 说明如前所述， 许多 Git 服务器都使用 SSH 公钥进行认证。 为了向 Git 服务器提供 SSH 公钥， 如果某系统用户尚未拥有密钥， 必须事先为其生成一份。 这个过程在所有操作系统上都是相似的。 首先， 你需要确认自己是否已经拥有密钥。 默认情况下， 用户的 SSH 密钥存储在其 ~/.ssh 目录下。 进入该目录并列出其中内容， 你便可以快速确认自己是否已拥有密钥： 12345// 确认是否有公钥$ cd~/.ssh$ lsauthorized_keys2 id_dsa known_hostsconfig id_dsa.pub 我们需要寻找一对以 id_dsa 或 id_rsa 命名的文件， 其中一个带有 .pub 扩展名。 .pub 文件是你的公钥， 另一个则是私钥。 如果找不到这样的文件（或者根本没有 .ssh 目录）， 你可以通过运行 ssh-keygen 程序来创建它们。 在 Linux/Mac 系统中， ssh-keygen 随 SSH 软件包提供； 在 Windows 上， 该程序包含于 MSysGit 软件包中。 1234567891011$ ssh - keygenGenerating public / private rsa key pair.Enter file in which to save the key(/home/schacon / .ssh / id_rsa): Created directory &apos;/home/schacon/.ssh&apos;.Enter passphrase(empty for no passphrase): Enter same passphrase again: Your identification has been saved in /home/schacon / .ssh / id_rsa.Your public key has been saved in /home/schacon / .ssh / id_rsa.pub.The key fingerprint is: d0: 82: 24: 8 e: d7: f1: bb: 9 b: 33: 53: 96: 93: 49: da: 9 b: e3 schacon @mylaptop.local 首先 ssh-keygen 会确认密钥的存储位置（默认是 .ssh/id_rsa）， 然后它会要求你输入两次密钥口令。 如果你不想在使用密钥时输入口令， 将其留空即可。 现在， 进行了上述操作的用户需要将各自的公钥发送给任意一个 Git 服务器管理员（假设服务器正在使用基于公钥的 SSH 验证设置）。 他们所要做的就是复制各自的 .pub 文件内容， 并将其通过邮件发送。 公钥看起来是这样的： 1234567$ cat~/.ssh/id_rsa.pubssh - rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAklOUpkDHrfHY17SbrmTIpNLTGK9Tjom / BWDSUGPl + nafzlHDTYW7hdI4yZ5ew18JH4JW9jbhUFrviQzM7xlELEVf4h9lFX5QVkbPppSwg0cda3Pbv7kOdJ / MTyBlWXFCR + HAo3FXRitBqxiX1nKhXpHAZsMciLq8V6RjsNAQwdsdMFvSlVK / 7 XAt3FaoJoAsncM1Q9x5 + 3 V0Ww68 / eIFmb1zuUFljQJKprrX88XypNDvjYNby6vw / Pb0rwert / EnmZ + AW4OZPnTPI89ZPmVMLuayrD2cE86Z / il8b + gw3r3 + 1n KatmIkjn2so1d01QraTlMqVSsbxNrRFi9wrf + M7Q == schacon @mylaptop.local]]></content>
       <tags>
-        <tag>示例</tag>
-        <tag>笔记</tag>
         <tag>Git</tag>
         <tag>命令</tag>
+        <tag>示例</tag>
+        <tag>笔记</tag>
       </tags>
   </entry>
   <entry>
